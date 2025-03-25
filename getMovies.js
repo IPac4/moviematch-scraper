@@ -1,42 +1,3 @@
-import fetch from 'node-fetch';
-import fs from 'fs';
-
-const queryPayload = {
-  operationName: "GetCatalog",
-  variables: {
-    country: "SI",
-    language: "sl",
-    first: 100,
-    platforms: ["nfx", "dnp", "hbm", "prv", "vyo", "sse", "apv"],
-    sortBy: "POPULAR",
-    monetizationTypes: ["flatrate"],
-    genres: [],
-    contentTypes: ["MOVIE"]
-  },
-  query: `query GetCatalog($country: Country!, $language: Language!, $first: Int!, $sortBy: CatalogSort!, $releaseYear: Int, $platforms: [PlatformCode!], $monetizationTypes: [MonetizationType!], $genres: [GenreCode!], $contentTypes: [ContentType!]) {
-    catalog(country: $country, language: $language, sortBy: $sortBy, first: $first, releaseYear: $releaseYear, platforms: $platforms, monetizationTypes: $monetizationTypes, genres: $genres, contentTypes: $contentTypes) {
-      items {
-        content {
-          id
-          title
-          originalReleaseYear
-          posterUrl
-          shortDescription
-          scoring {
-            providerType
-            value
-          }
-          offers {
-            providerId
-            monetizationType
-            urls
-          }
-        }
-      }
-    }
-  }`
-};
-
 async function fetchMovies() {
   try {
     const res = await fetch('https://apis.justwatch.com/graphql', {
@@ -45,17 +6,15 @@ async function fetchMovies() {
       body: JSON.stringify(queryPayload)
     });
 
-    try {
-  const res = await fetch('https://apis.justwatch.com/graphql', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(queryPayload)
-  });
+    const text = await res.text();
+    console.log('📦 Raw response:', text); // TO JE KLJUČNO
 
-  const text = await res.text();
-  console.log('📦 Raw response:', text); // <-- ključno!
-  
-  const json = JSON.parse(text);
+    const json = JSON.parse(text);
+
+    // Če se JSON struktura ne ujema, vrni napako
+    if (!json.data || !json.data.catalog) {
+      throw new Error('JustWatch API response structure changed or failed');
+    }
 
     const movies = json.data.catalog.items.map(item => {
       const c = item.content;
@@ -78,4 +37,3 @@ async function fetchMovies() {
   }
 }
 
-fetchMovies();
