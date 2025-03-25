@@ -45,7 +45,18 @@ async function fetchMovies() {
       body: JSON.stringify(queryPayload)
     });
 
-    const json = await res.json();
+    try {
+  const res = await fetch('https://apis.justwatch.com/graphql', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(queryPayload)
+  });
+
+  const text = await res.text();
+  console.log('📦 Raw response:', text); // <-- ključno!
+  
+  const json = JSON.parse(text);
+
     const movies = json.data.catalog.items.map(item => {
       const c = item.content;
       return {
